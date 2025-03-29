@@ -5,141 +5,6 @@ const channelInput = document.getElementById('channel');
 const connectBtn = document.getElementById('connect-btn');
 const disconnectBtn = document.getElementById('disconnect-btn');
 const chatMessages = document.getElementById('chat-messages');
-
-let client = null;
-let currentChannel = '';
-
-channelInput.value = defaultChannel; // Set default channel from config
-
-// Function to add a message to the chat display
-const addMessage = (userstate, message) => {
-  const li = document.createElement('li');
-  const usernameSpan = document.createElement('strong');
-
-  usernameSpan.textContent = userstate['display-name'] || userstate.username;
-  // Use Twitch user color if available
-  if (userstate.color) {
-    usernameSpan.style.color = userstate.color;
-  }
-
-  li.appendChild(usernameSpan);
-  li.appendChild(document.createTextNode(`: ${message}`));
-  chatMessages.appendChild(li);
-
-  // Auto-scroll to the bottom
-  const chatContainer = document.getElementById('chat-container');
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  // Optional: Limit the number of messages displayed
-  const maxMessages = 100; // Adjust as needed
-  if (chatMessages.children.length > maxMessages) {
-    chatMessages.removeChild(chatMessages.children[0]);
-  }
-};
-
-// Function to add a system message (e.g., connected, disconnected)
-const addSystemMessage = (message) => {
-    const li = document.createElement('li');
-    li.style.fontStyle = 'italic';
-    li.style.color = '#666';
-    li.textContent = message;
-    chatMessages.appendChild(li);
-    const chatContainer = document.getElementById('chat-container');
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-};
-
-
-// Function to connect to Twitch chat
-const connectChat = () => {
-  const channel = channelInput.value.trim();
-  if (!channel) {
-    alert('Please enter a channel name.');
-    return;
-  }
-
-  if (client && client.readyState() === 'OPEN') {
-      addSystemMessage(`Already connected to #${currentChannel}. Disconnect first.`);
-      return;
-  }
-
-
-  addSystemMessage(`Connecting to #${channel}...`);
-  connectBtn.disabled = true;
-  channelInput.disabled = true;
-
-
-  client = new tmi.Client({
-    channels: [channel]
-  });
-
-  client.on('message', (channel, userstate, message, self) => {
-    // Don't display messages from the bot itself
-    if (self) return;
-    addMessage(userstate, message);
-  });
-
-   client.on('connected', (address, port) => {
-    currentChannel = channel;
-    addSystemMessage(`Connected to #${currentChannel}`);
-    disconnectBtn.disabled = false;
-    connectBtn.disabled = true; // Keep connect disabled while connected
-    channelInput.disabled = true; // Keep input disabled while connected
-  });
-
-   client.on('disconnected', (reason) => {
-    addSystemMessage(`Disconnected: ${reason || 'Connection closed'}`);
-    disconnectBtn.disabled = true;
-    connectBtn.disabled = false;
-    channelInput.disabled = false;
-    client = null; // Reset client
-    currentChannel = '';
-  });
-
-  client.connect().catch(err => {
-      addSystemMessage(`Failed to connect: ${err}`);
-      console.error("Connection error:", err);
-      disconnectBtn.disabled = true;
-      connectBtn.disabled = false;
-       channelInput.disabled = false;
-      client = null; // Reset client
-  });
-};
-
-// Function to disconnect from Twitch chat
-const disconnectChat = () => {
-  if (client && client.readyState() === 'OPEN') {
-    addSystemMessage(`Disconnecting from #${currentChannel}...`);
-    client.disconnect();
-    disconnectBtn.disabled = true; // Disable immediately
-  } else {
-      addSystemMessage('Not connected.');
-      disconnectBtn.disabled = true;
-      connectBtn.disabled = false;
-      channelInput.disabled = false;
-  }
-};
-
-// Event listeners
-connectBtn.addEventListener('click', connectChat);
-disconnectBtn.addEventListener('click', disconnectChat);
-
-// Allow connecting by pressing Enter in the input field
-channelInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        connectChat();
-    }
-});
-
-// Initial state
-disconnectBtn.disabled = true;
-
-import tmi from 'tmi.js';
-import { defaultChannel } from './config.js';
-
-const channelInput = document.getElementById('channel');
-const connectBtn = document.getElementById('connect-btn');
-const disconnectBtn = document.getElementById('disconnect-btn');
-const chatMessages = document.getElementById('chat-messages');
 const chatContainer = document.getElementById('chat-container'); // Get chat container
 
 let client = null;
@@ -163,7 +28,6 @@ const addChatMessage = (userstate, message) => {
       // Assign a default color if none provided (optional)
       usernameSpan.style.color = getRandomColor(userstate.username); // Or a fixed default
   }
-
 
   li.appendChild(usernameSpan);
   li.appendChild(document.createTextNode(`: ${message}`)); // Add the message text
@@ -207,7 +71,6 @@ const getRandomColor = (username) => {
     return `#${'00000'.substring(0, 6 - color.length)}${color}`;
 };
 
-
 // --- Core Logic ---
 
 // Function to connect to Twitch chat
@@ -230,7 +93,6 @@ const connectChat = () => {
   connectBtn.disabled = true;
   disconnectBtn.disabled = true; // Disable disconnect during connection attempt
   channelInput.disabled = true;
-
 
   client = new tmi.Client({
     options: { debug: false }, // Set debug to true for more logs if needed
@@ -343,4 +205,3 @@ connectBtn.disabled = false;
 channelInput.disabled = false;
 
 addSystemMessage('Enter a Twitch channel name and click Connect.');
-
